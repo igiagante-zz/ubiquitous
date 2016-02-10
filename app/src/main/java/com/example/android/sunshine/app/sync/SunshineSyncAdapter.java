@@ -32,6 +32,14 @@ import com.example.android.sunshine.app.MainActivity;
 import com.example.android.sunshine.app.R;
 import com.example.android.sunshine.app.Utility;
 import com.example.android.sunshine.app.data.WeatherContract;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,7 +53,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
 
-public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
+public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
+        GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks
+{
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
     // Interval at which to sync with the weather, in seconds.
     // 60 seconds (1 minute) * 180 = 3 hours
@@ -68,8 +78,33 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     private static final int INDEX_MIN_TEMP = 2;
     private static final int INDEX_SHORT_DESC = 3;
 
+    //wearable keys
+    private static final String FORECAST_PATH = "/forecast";
+    private static final String MAX_TEMP_KEY = "max-temp";
+    private static final String MIN_TEMP_KEY = "min-temp";
+    private static final String WEATHER_ICON_KEY = "weather-icon";
+    private static final String TIMESTAMP_KEY = "timestamp";
+
+    //Google Api Client
+    private GoogleApiClient mGoogleApiClient;
+
     public SunshineSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
     }
 
     @Override
@@ -88,6 +123,13 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         String format = "json";
         String units = "metric";
         int numDays = 14;
+
+        //create and config google api client with listeners and callbacks
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addApi(Wearable.API)
+                .addOnConnectionFailedListener(this)
+                .addConnectionCallbacks(this)
+                .build();
 
         try {
             // Construct the URL for the OpenWeatherMap query
@@ -275,6 +317,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 high = temperatureObject.getDouble(OWM_MAX);
                 low = temperatureObject.getDouble(OWM_MIN);
 
+                if (i == 0) {
+                    sendTodayForecast(high, low, weatherId);
+                }
+
                 ContentValues weatherValues = new ContentValues();
 
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_LOC_KEY, locationId);
@@ -312,6 +358,32 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
         }
+    }
+
+    private void sendTodayForecast(double maxTemp, double minTemp, int weatherId) {
+
+        PutDataMapRequest dataMap = PutDataMapRequest.create(FORECAST_PATH);
+        String lowString = Utility.formatTemperature(getContext(), minTemp);
+        String highString = Utility.formatTemperature(getContext(), maxTemp);
+        dataMap.getDataMap().putString(MAX_TEMP_KEY, highString);
+        dataMap.getDataMap().putString(MIN_TEMP_KEY, lowString);
+
+        int artResource = Utility.getArtResourceForWeatherCondition(weatherId);
+        Asset weatherIcon = Utility.toAsset(artResource, getContext());
+        dataMap.getDataMap().putAsset(WEATHER_ICON_KEY, weatherIcon);
+        dataMap.getDataMap().putLong(TIMESTAMP_KEY, System.currentTimeMillis());
+        PutDataRequest request = dataMap.asPutDataRequest();
+
+        Wearable.DataApi.putDataItem(mGoogleApiClient, request)
+                .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                    @Override
+                    public void onResult(DataApi.DataItemResult dataItemResult) {
+                        if (!dataItemResult.getStatus().isSuccess()) {
+                            Log.e(LOG_TAG, "ERROR: failed to putDataItem, status code: "
+                                    + dataItemResult.getStatus().getStatusCode());
+                        }
+                    }
+                });
     }
 
     private void notifyWeather() {

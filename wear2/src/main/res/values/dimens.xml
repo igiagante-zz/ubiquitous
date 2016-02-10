@@ -19,4 +19,7 @@
     <!-- Image sizes -->
     <dimen name="image_size">40dp</dimen>
 
+    <dimen name="weather_icon_width">48dp</dimen>
+    <dimen name="weather_icon_height">48dp</dimen>
+
 </resources>
