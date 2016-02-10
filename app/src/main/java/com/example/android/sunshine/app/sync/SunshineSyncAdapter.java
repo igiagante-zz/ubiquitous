@@ -94,17 +94,17 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
 
     @Override
     public void onConnected(Bundle bundle) {
-
+        Log.d(LOG_TAG, "onConnected: " + bundle);
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        Log.d(LOG_TAG, "onConnectionSuspended: " + i);
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-
+        Log.d(LOG_TAG, "onConnectionFailed: " + connectionResult);
     }
 
     @Override
@@ -362,7 +362,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
 
     private void sendTodayForecast(double maxTemp, double minTemp, int weatherId) {
 
-        PutDataMapRequest dataMap = PutDataMapRequest.create(FORECAST_PATH);
+        PutDataMapRequest dataMap = PutDataMapRequest.create(FORECAST_PATH).setUrgent();
         String lowString = Utility.formatTemperature(getContext(), minTemp);
         String highString = Utility.formatTemperature(getContext(), maxTemp);
         dataMap.getDataMap().putString(MAX_TEMP_KEY, highString);
