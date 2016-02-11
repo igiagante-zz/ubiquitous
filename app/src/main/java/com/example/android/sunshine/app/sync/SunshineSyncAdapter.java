@@ -94,7 +94,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.d(LOG_TAG, "onConnected: " + bundle);
+        Log.d(LOG_TAG, " CONNECTING! ");
     }
 
     @Override

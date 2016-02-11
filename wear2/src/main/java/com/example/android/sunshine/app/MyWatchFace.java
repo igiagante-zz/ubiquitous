@@ -158,6 +158,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
         }
 
         @Override
+        public void onConnectionFailed(ConnectionResult connectionResult) {
+            Log.d(TAG, "onConnectionFailed: SOMETHING IS WRONG!    " + connectionResult.getErrorMessage());
+        }
+
+        @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
             Log.d(TAG, "onDataChanged called!");
             for (DataEvent event : dataEventBuffer) {
@@ -207,11 +212,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
                             false);
                 }
             }
-        }
-
-        @Override
-        public void onConnectionFailed(ConnectionResult connectionResult) {
-
         }
 
         @Override
@@ -348,7 +348,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
             if (visible) {
                 mGoogleApiClient.connect();
                 Log.d(TAG, "Google Api Client connected!");
-
                 registerReceiver();
 
                 // Update time zone in case it changed while we weren't visible.
