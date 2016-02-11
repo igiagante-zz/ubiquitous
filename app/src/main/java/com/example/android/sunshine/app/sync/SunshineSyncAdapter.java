@@ -59,7 +59,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
     // Interval at which to sync with the weather, in seconds.
     // 60 seconds (1 minute) * 180 = 3 hours
-    public static final int SYNC_INTERVAL = 60 * 180;
+    public static final int SYNC_INTERVAL = 10;
     public static final int SYNC_FLEXTIME = SYNC_INTERVAL/3;
     private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
     private static final int WEATHER_NOTIFICATION_ID = 3004;
@@ -80,9 +80,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
 
     //wearable keys
     private static final String FORECAST_PATH = "/forecast";
-    private static final String MAX_TEMP_KEY = "max-temp";
-    private static final String MIN_TEMP_KEY = "min-temp";
-    private static final String WEATHER_ICON_KEY = "weather-icon";
+    private static final String MAX_TEMP_KEY = "max_temp";
+    private static final String MIN_TEMP_KEY = "min_temp";
+    private static final String WEATHER_ICON_KEY = "weather_icon";
     private static final String TIMESTAMP_KEY = "timestamp";
 
     //Google Api Client
@@ -130,6 +130,8 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
                 .addOnConnectionFailedListener(this)
                 .addConnectionCallbacks(this)
                 .build();
+
+        mGoogleApiClient.connect();
 
         try {
             // Construct the URL for the OpenWeatherMap query
@@ -524,16 +526,22 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
     public static void configurePeriodicSync(Context context, int syncInterval, int flexTime) {
         Account account = getSyncAccount(context);
         String authority = context.getString(R.string.content_authority);
+
+        Bundle bundle = new Bundle();
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+
+            bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+
             // we can enable inexact timers in our periodic sync
             SyncRequest request = new SyncRequest.Builder().
                     syncPeriodic(syncInterval, flexTime).
                     setSyncAdapter(account, authority).
-                    setExtras(new Bundle()).build();
+                    setExtras(bundle).build();
             ContentResolver.requestSync(request);
         } else {
             ContentResolver.addPeriodicSync(account,
-                    authority, new Bundle(), syncInterval);
+                    authority, bundle, syncInterval);
         }
     }
 
@@ -585,6 +593,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
 
             onAccountCreated(newAccount, context);
         }
+
         return newAccount;
     }
 
@@ -606,6 +615,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements
     }
 
     public static void initializeSyncAdapter(Context context) {
-        getSyncAccount(context);
+       // getSyncAccount(context);
+        syncImmediately(context);
     }
 }

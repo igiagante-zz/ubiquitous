@@ -28,24 +28,19 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
-import android.text.TextUtils;
-import android.text.format.DateUtils;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
-import com.example.igiagante.app.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
@@ -53,8 +48,6 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.io.InputStream;
@@ -144,28 +137,29 @@ public class MyWatchFace extends CanvasWatchFaceService {
         boolean mLowBitAmbient;
 
         private static final String FORECAST_PATH = "/forecast";
-        private static final String MAX_TEMP_KEY = "max-temp";
-        private static final String MIN_TEMP_KEY = "min-temp";
-        private static final String WEATHER_ICON_KEY = "weather-icon";
+        private static final String MAX_TEMP_KEY = "max_temp";
+        private static final String MIN_TEMP_KEY = "min_temp";
+        private static final String WEATHER_ICON_KEY = "weather_icon";
 
-        private String mHighTemp;
-        private String mLowTemp;
+        private String mHighTemp = "25";
+        private String mLowTemp = "16";
         private Bitmap mWeatherIcon;
         private GoogleApiClient mGoogleApiClient;
 
         @Override
         public void onConnected(Bundle bundle) {
             Log.d("Connected: ", bundle.toString());
-            Wearable.DataApi.addListener(mGoogleApiClient, this);
+            Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
         }
 
         @Override
         public void onConnectionSuspended(int i) {
-
+            Log.d(TAG, "onConnectionSuspended: " + i);
         }
 
         @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
+            Log.d(TAG, "onDataChanged called!");
             for (DataEvent event : dataEventBuffer) {
                 DataItem item = event.getDataItem();
                 if (FORECAST_PATH.equals(item.getUri().getPath())) {
@@ -324,20 +318,25 @@ public class MyWatchFace extends CanvasWatchFaceService {
             if(icon != null) {
                 Paint paintIcon = new Paint();
                 paintIcon.setAntiAlias(true);
-                canvas.drawBitmap(mWeatherIcon, mXOffset - 10, mYOffset + 77, paintIcon);
+                if(mWeatherIcon != null) {
+                    canvas.drawBitmap(mWeatherIcon, mXOffset - 10, mYOffset + 77, paintIcon);
+                } else {
+                    canvas.drawBitmap(icon, mXOffset - 10, mYOffset + 77, paintIcon);
+                }
+
             }
 
             mTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
             //draw temp max
-            String max = String.format("%dº", mHighTemp);
+            String max = String.format("%sº", mHighTemp);
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_temp));
             canvas.drawText(max, mXOffset + 70, mYOffset + 120, mTextPaint);
 
             mTextPaint.setTypeface(NORMAL_TYPEFACE);
 
             //draw temp min
-            String min = String.format("%dº", mLowTemp);
+            String min = String.format("%sº", mLowTemp);
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_temp));
             canvas.drawText(min, mXOffset + 140, mYOffset + 120, mTextPaint);
         }
@@ -347,6 +346,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
+                mGoogleApiClient.connect();
+                Log.d(TAG, "Google Api Client connected!");
+
                 registerReceiver();
 
                 // Update time zone in case it changed while we weren't visible.
