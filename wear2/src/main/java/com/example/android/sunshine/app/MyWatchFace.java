@@ -299,6 +299,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             String date = sdf.format(new Date());
 
             //draw hour
+            //mTextPaint.setColor(resources.getColor(R.color.digital_text));
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_hour));
             mTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
             canvas.drawText(text, mXOffset + resources.getDimension(R.dimen.offset_hour_x), mYOffset, mTextPaint);
