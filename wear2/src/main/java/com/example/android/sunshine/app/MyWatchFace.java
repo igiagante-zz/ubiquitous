@@ -148,8 +148,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onConnected(Bundle bundle) {
-            Log.d("Connected: ", bundle.toString());
-            Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
+            Wearable.DataApi.addListener(mGoogleApiClient, this);
+            Log.i("SUNSHINE", "CONNECTED");
         }
 
         @Override
@@ -159,7 +159,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onConnectionFailed(ConnectionResult connectionResult) {
-            Log.d(TAG, "onConnectionFailed: SOMETHING IS WRONG!    " + connectionResult.getErrorMessage());
+            Log.d(TAG, "onConnectionFailed: SOMETHING IS WRONG!    " + connectionResult.getErrorCode());
         }
 
         @Override
@@ -268,6 +268,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mXOffset = resources.getDimension(isRound
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
 
+            mYOffset = resources.getDimension(isRound
+                    ? R.dimen.digital_y_offset_round : R.dimen.digital_y_offset);
+
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
 
@@ -287,28 +290,33 @@ public class MyWatchFace extends CanvasWatchFaceService {
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mTime.setToNow();
 
+            Resources resources = MyWatchFace.this.getResources();
+
             String text = String.format("%d:%02d", mTime.hour, mTime.minute);
 
-            String format = "EEE, MMM d yyyy";
-            SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
+            SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(R.string.format_date), Locale.getDefault());
 
             String date = sdf.format(new Date());
-
-            Resources resources = MyWatchFace.this.getResources();
 
             //draw hour
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_hour));
             mTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-            canvas.drawText(text, mXOffset + 25, mYOffset, mTextPaint);
+            canvas.drawText(text, mXOffset + resources.getDimension(R.dimen.offset_hour_x), mYOffset, mTextPaint);
 
             //draw date
+            mTextPaint.setTypeface(NORMAL_TYPEFACE);
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_date));
-            canvas.drawText(date, mXOffset, mYOffset + 40, mTextPaint);
+            canvas.drawText(date, mXOffset, mYOffset + resources.getDimension(R.dimen.offset_date_y), mTextPaint);
 
             //draw icon
             Paint paintLine = new Paint();
             paintLine.setColor(Color.WHITE);
-            canvas.drawLine(115, 155, 165, 155, paintLine);
+
+            //draw line
+            float x = mXOffset + resources.getDimension(R.dimen.line_initial_x);
+            float y = mYOffset + resources.getDimension(R.dimen.line_y);
+            float dx = x + resources.getDimension(R.dimen.line_dx);
+            canvas.drawLine(x, y, dx, y, paintLine);
 
             int mBitmapWidthAndHeight = (int) resources.getDimension(R.dimen.image_size);
 
@@ -319,26 +327,30 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 Paint paintIcon = new Paint();
                 paintIcon.setAntiAlias(true);
                 if(mWeatherIcon != null) {
-                    canvas.drawBitmap(mWeatherIcon, mXOffset - 10, mYOffset + 77, paintIcon);
+                    canvas.drawBitmap(mWeatherIcon, mXOffset,
+                            mYOffset + resources.getDimension(R.dimen.icon_dy), paintIcon);
                 } else {
-                    canvas.drawBitmap(icon, mXOffset - 10, mYOffset + 77, paintIcon);
+                    canvas.drawBitmap(icon, mXOffset,
+                            mYOffset + resources.getDimension(R.dimen.icon_dy), paintIcon);
                 }
-
             }
 
+            //set bold the max temp
             mTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
             //draw temp max
-            String max = String.format("%sº", mHighTemp);
+            String max = String.format("%s", mHighTemp);
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_temp));
-            canvas.drawText(max, mXOffset + 70, mYOffset + 120, mTextPaint);
+            canvas.drawText(max, mXOffset + resources.getDimension(R.dimen.temp_max_dx),
+                    mYOffset + resources.getDimension(R.dimen.temp_dy), mTextPaint);
 
             mTextPaint.setTypeface(NORMAL_TYPEFACE);
 
             //draw temp min
-            String min = String.format("%sº", mLowTemp);
+            String min = String.format("%s", mLowTemp);
             mTextPaint.setTextSize(resources.getDimension(R.dimen.digital_text_size_temp));
-            canvas.drawText(min, mXOffset + 140, mYOffset + 120, mTextPaint);
+            canvas.drawText(min, mXOffset + resources.getDimension(R.dimen.temp_min_dx),
+                    mYOffset + resources.getDimension(R.dimen.temp_dy), mTextPaint);
         }
 
         @Override
